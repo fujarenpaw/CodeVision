@@ -11,10 +11,13 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+
 # Build output
 dist/
 build/
 out/
+Debug/
+obj/
 
 # IDE and editor files
 .idea/

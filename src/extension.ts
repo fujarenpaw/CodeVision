@@ -1,26 +1,203 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import { CodeAnalyzer } from './analyzer/CodeAnalyzer';
+import { CytoscapeVisualizer } from './graph/CytoscapeVisualizer';
+import { GraphNode, GraphEdge } from './graph/GraphVisualizer';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): void {
+	console.log('Butterfly Graph extension is now active!');
+	
+	// サポートされている言語の確認
+	const supportedLanguages = ['cpp', 'c', 'csharp', 'python'];
+	console.log('Supported languages:', supportedLanguages);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "codevision" is now active!');
+	const analyzer = new CodeAnalyzer();
+	let currentPanel: vscode.WebviewPanel | undefined;
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('codevision.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from CodeVision!');
-	});
+	const showButterflyGraph = async () => {
+		try {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) {
+				vscode.window.showErrorMessage('No active editor');
+				return;
+			}
 
+			// 言語のサポート確認
+			const languageId = editor.document.languageId;
+			if (!supportedLanguages.includes(languageId)) {
+				vscode.window.showErrorMessage(
+					`Language '${languageId}' is not supported. Supported languages are: ${supportedLanguages.join(', ')}`
+				);
+				return;
+			}
+
+			// カーソル位置の詳細な情報を取得
+			const position = editor.selection.active;
+			const wordRange = editor.document.getWordRangeAtPosition(position);
+			const word = wordRange ? editor.document.getText(wordRange) : '';
+
+			console.log('Analyzing function in language:', languageId);
+			console.log('Cursor position:', {
+				line: position.line,
+				character: position.character,
+				word: word,
+				wordRange: wordRange
+			});
+
+			// 言語サーバーの状態を確認
+			const languageServerStatus = await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider', editor.document.uri);
+			console.log('Language server status:', languageServerStatus ? 'active' : 'inactive');
+
+			const functionInfo = await analyzer.analyzeFunction(editor.document, position);
+			if (!functionInfo) {
+				vscode.window.showErrorMessage('No function found at the current position. Make sure the cursor is inside a function definition.');
+				return;
+			}
+
+			// WebViewパネルの作成または再利用
+			if (currentPanel) {
+				currentPanel.reveal(vscode.ViewColumn.Beside);
+			} else {
+				currentPanel = vscode.window.createWebviewPanel(
+					'butterflyGraph',
+					'Butterfly Graph',
+					vscode.ViewColumn.Beside,
+					{
+						enableScripts: true,
+						retainContextWhenHidden: true
+					}
+				);
+
+				currentPanel.onDidDispose(() => {
+					currentPanel = undefined;
+				});
+			}
+
+			// グラフデータの生成
+			const nodes: GraphNode[] = [];
+			const edges: GraphEdge[] = [];
+
+			// 中心の関数
+			const rootId = 'root';
+			nodes.push({
+				id: rootId,
+				label: functionInfo.name
+			});
+
+			// 呼び出し元の関数
+			functionInfo.callers.forEach((caller, index) => {
+				const callerId = `caller_${index}`;
+				nodes.push({
+					id: callerId,
+					label: caller.name
+				});
+				edges.push({
+					source: callerId,
+					target: rootId
+				});
+			});
+
+			// 呼び出し先の関数
+			functionInfo.callees.forEach((callee, index) => {
+				const calleeId = `callee_${index}`;
+				nodes.push({
+					id: calleeId,
+					label: callee.name
+				});
+				edges.push({
+					source: rootId,
+					target: calleeId
+				});
+			});
+
+			// WebViewのHTMLコンテンツ
+			currentPanel.webview.html = getWebviewContent(nodes, edges);
+		} catch (error) {
+			vscode.window.showErrorMessage(`Error showing butterfly graph: ${error instanceof Error ? error.message : String(error)}`);
+		}
+	};
+
+	const disposable = vscode.commands.registerCommand('butterfly-graph.show', showButterflyGraph);
 	context.subscriptions.push(disposable);
 }
 
+function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[]): string {
+	const nodesJson = JSON.stringify(nodes.map(node => ({
+		data: {
+			id: node.id,
+			label: node.label
+		}
+	})));
+	
+	const edgesJson = JSON.stringify(edges.map(edge => ({
+		data: {
+			source: edge.source,
+			target: edge.target
+		}
+	})));
+
+	return `<!DOCTYPE html>
+	<html>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Butterfly Graph</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.23.0/cytoscape.min.js"></script>
+		<style>
+			#cy {
+				width: 100%;
+				height: 100vh;
+				position: absolute;
+				left: 0;
+				top: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="cy"></div>
+		<script>
+			const cy = cytoscape({
+				container: document.getElementById('cy'),
+				elements: {
+					nodes: ${nodesJson},
+					edges: ${edgesJson}
+				},
+				style: [
+					{
+						selector: 'node',
+						style: {
+							'label': 'data(label)',
+							'text-valign': 'center',
+							'text-halign': 'center',
+							'background-color': '#666',
+							'color': '#fff'
+						}
+					},
+					{
+						selector: 'edge',
+						style: {
+							'width': 2,
+							'line-color': '#999',
+							'target-arrow-color': '#999',
+							'target-arrow-shape': 'triangle',
+							'curve-style': 'bezier'
+						}
+					}
+				],
+				layout: {
+					name: 'grid',
+					rows: 1
+				}
+			});
+		</script>
+	</body>
+	</html>`;
+}
+
 // This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(): void {
+	// Cleanup code can be added here if needed
+}
