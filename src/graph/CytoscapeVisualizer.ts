@@ -32,6 +32,41 @@ export class CytoscapeVisualizer implements GraphVisualizer {
                 }
             ]
         });
+
+        this.initializeStyles();
+    }
+
+    private initializeStyles(): void {
+        if (!this.cy) return;
+        
+        this.cy.style()
+            .selector('node')
+            .style({
+                'width': 120,
+                'height': 60,
+                'background-color': '#666',
+                'label': 'data(label)',
+                'text-wrap': 'wrap',
+                'text-max-width': '100px',
+                'text-valign': 'center',
+                'text-halign': 'center',
+                'color': '#fff',
+                'font-size': '12px',
+                'padding': '10px',
+                'border-width': '2px',
+                'border-color': '#999',
+                'shape': 'roundrectangle'
+            })
+            .selector('edge')
+            .style({
+                'width': 2,
+                'line-color': '#999',
+                'target-arrow-color': '#999',
+                'target-arrow-shape': 'triangle',
+                'curve-style': 'bezier',
+                'control-point-step-size': 50
+            })
+            .update();
     }
 
     setData(nodes: GraphNode[], edges: GraphEdge[]): void {
@@ -67,7 +102,17 @@ export class CytoscapeVisualizer implements GraphVisualizer {
 
         const layoutOptions = {
             name: layout.name,
-            ...layout.options
+            ...layout.options,
+            spacingFactor: 2.0,
+            nodeDimensionsIncludeLabels: true,
+            padding: 50,
+            rankDir: 'LR',
+            rankSep: 200,
+            nodeSep: 100,
+            animate: true,
+            animationDuration: 500,
+            avoidOverlap: true,
+            avoidOverlapPadding: 20
         };
 
         this.cy.layout(layoutOptions).run();

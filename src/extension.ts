@@ -132,11 +132,17 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(disposable);
 }
 
+const MAX_LABEL_LENGTH = 20;
+
+function truncateLabel(label: string): string {
+	return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + '...' : label;
+}
+
 function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any): string {
 	const nodesJson = JSON.stringify(nodes.map(node => ({
 		data: {
 			id: node.id,
-			label: node.label
+			label: truncateLabel(node.label)
 		}
 	})));
 	
@@ -199,8 +205,12 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 					}
 				],
 				layout: {
-					name: 'grid',
-					rows: 1
+					name: 'breadthfirst',
+					roots: ['root'],
+					direction: 'LR',
+					spacingFactor: 2.0,
+					avoidOverlap: true,
+					padding: 50
 				}
 			});
 		</script>
