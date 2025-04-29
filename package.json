@@ -25,6 +25,38 @@
           "when": "editorHasSelection"
         }
       ]
+    },
+    "configuration": {
+      "title": "Butterfly Graph",
+      "properties": {
+        "butterflyGraph.callerLevels": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Number of caller levels to display"
+        },
+        "butterflyGraph.calleeLevels": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 5,
+          "description": "Number of callee levels to display"
+        },
+        "butterflyGraph.maxNodesPerLevel": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum number of nodes to display per level"
+        },
+        "butterflyGraph.theme": {
+          "type": "string",
+          "default": "default",
+          "enum": ["default", "dark", "light"],
+          "description": "Theme for the butterfly graph visualization"
+        }
+      }
     }
   },
   "scripts": {

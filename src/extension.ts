@@ -4,6 +4,7 @@ import * as vscode from 'vscode';
 import { CodeAnalyzer } from './analyzer/CodeAnalyzer';
 import { CytoscapeVisualizer } from './graph/CytoscapeVisualizer';
 import { GraphNode, GraphEdge } from './graph/GraphVisualizer';
+import { SettingsManager } from './config/settings';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -15,6 +16,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	console.log('Supported languages:', supportedLanguages);
 
 	const analyzer = new CodeAnalyzer();
+	const settingsManager = SettingsManager.getInstance();
 	let currentPanel: vscode.WebviewPanel | undefined;
 
 	const showButterflyGraph = async () => {
@@ -33,6 +35,10 @@ export function activate(context: vscode.ExtensionContext): void {
 				);
 				return;
 			}
+
+			// 設定の取得
+			const settings = settingsManager.getSettings();
+			console.log('Current settings:', settings);
 
 			// カーソル位置の詳細な情報を取得
 			const position = editor.selection.active;
@@ -87,8 +93,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				label: functionInfo.name
 			});
 
-			// 呼び出し元の関数
-			functionInfo.callers.forEach((caller, index) => {
+			// 呼び出し元の関数（設定に基づいて制限）
+			const callers = functionInfo.callers.slice(0, settings.maxNodesPerLevel);
+			callers.forEach((caller, index) => {
 				const callerId = `caller_${index}`;
 				nodes.push({
 					id: callerId,
@@ -100,8 +107,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				});
 			});
 
-			// 呼び出し先の関数
-			functionInfo.callees.forEach((callee, index) => {
+			// 呼び出し先の関数（設定に基づいて制限）
+			const callees = functionInfo.callees.slice(0, settings.maxNodesPerLevel);
+			callees.forEach((callee, index) => {
 				const calleeId = `callee_${index}`;
 				nodes.push({
 					id: calleeId,
@@ -114,7 +122,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			});
 
 			// WebViewのHTMLコンテンツ
-			currentPanel.webview.html = getWebviewContent(nodes, edges);
+			currentPanel.webview.html = getWebviewContent(nodes, edges, settings);
 		} catch (error) {
 			vscode.window.showErrorMessage(`Error showing butterfly graph: ${error instanceof Error ? error.message : String(error)}`);
 		}
@@ -124,7 +132,7 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(disposable);
 }
 
-function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[]): string {
+function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any): string {
 	const nodesJson = JSON.stringify(nodes.map(node => ({
 		data: {
 			id: node.id,
@@ -138,6 +146,9 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[]): string {
 			target: edge.target
 		}
 	})));
+
+	// テーマに基づくスタイル設定
+	const themeStyles = getThemeStyles(settings.theme);
 
 	return `<!DOCTYPE html>
 	<html>
@@ -172,16 +183,16 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[]): string {
 							'label': 'data(label)',
 							'text-valign': 'center',
 							'text-halign': 'center',
-							'background-color': '#666',
-							'color': '#fff'
+							'background-color': '${themeStyles.nodeBackgroundColor}',
+							'color': '${themeStyles.nodeTextColor}'
 						}
 					},
 					{
 						selector: 'edge',
 						style: {
 							'width': 2,
-							'line-color': '#999',
-							'target-arrow-color': '#999',
+							'line-color': '${themeStyles.edgeColor}',
+							'target-arrow-color': '${themeStyles.edgeColor}',
 							'target-arrow-shape': 'triangle',
 							'curve-style': 'bezier'
 						}
@@ -195,6 +206,29 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[]): string {
 		</script>
 	</body>
 	</html>`;
+}
+
+function getThemeStyles(theme: string): { nodeBackgroundColor: string; nodeTextColor: string; edgeColor: string } {
+	switch (theme) {
+		case 'dark':
+			return {
+				nodeBackgroundColor: '#333',
+				nodeTextColor: '#fff',
+				edgeColor: '#666'
+			};
+		case 'light':
+			return {
+				nodeBackgroundColor: '#f0f0f0',
+				nodeTextColor: '#000',
+				edgeColor: '#999'
+			};
+		default:
+			return {
+				nodeBackgroundColor: '#666',
+				nodeTextColor: '#fff',
+				edgeColor: '#999'
+			};
+	}
 }
 
 // This method is called when your extension is deactivated
