@@ -139,11 +139,32 @@ function truncateLabel(label: string): string {
 }
 
 function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any): string {
+	const centerX = 0;
+	const centerY = 0;
+	const xOffset = 300;
+	const yStep = 100;
+
+	// ノードを分類
+	const root = nodes.find(n => n.id === 'root');
+	const callers = nodes.filter(n => n.id.startsWith('caller_'));
+	const callees = nodes.filter(n => n.id.startsWith('callee_'));
+
+	// 位置割り当て
+	const nodePositions: Record<string, {x: number, y: number}> = {};
+	if (root) nodePositions[root.id] = { x: centerX, y: centerY };
+	callers.forEach((n, i) => {
+		nodePositions[n.id] = { x: centerX - xOffset, y: centerY + (i - (callers.length-1)/2) * yStep };
+	});
+	callees.forEach((n, i) => {
+		nodePositions[n.id] = { x: centerX + xOffset, y: centerY + (i - (callees.length-1)/2) * yStep };
+	});
+
 	const nodesJson = JSON.stringify(nodes.map(node => ({
 		data: {
 			id: node.id,
 			label: truncateLabel(node.label)
-		}
+		},
+		position: nodePositions[node.id] || {x: 0, y: 0}
 	})));
 	
 	const edgesJson = JSON.stringify(edges.map(edge => ({
@@ -205,12 +226,7 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 					}
 				],
 				layout: {
-					name: 'breadthfirst',
-					roots: ['root'],
-					direction: 'LR',
-					spacingFactor: 2.0,
-					avoidOverlap: true,
-					padding: 50
+					name: 'preset'
 				}
 			});
 		</script>
