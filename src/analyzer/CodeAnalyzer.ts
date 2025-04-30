@@ -172,7 +172,7 @@ export class CodeAnalyzer {
             }
         }
         let displayName = item.name;
-        if (className) {
+        if (className && depth > 0) {
             displayName = `${className}::${item.name}`;
         }
         console.log('FunctionInfo name:', displayName);
