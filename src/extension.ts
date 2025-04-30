@@ -274,7 +274,13 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 				],
 				layout: {
 					name: 'preset'
-				}
+				},
+				// ズーム設定
+				minZoom: 0.1,  // 最小ズームレベル
+				maxZoom: 10,   // 最大ズームレベル
+				wheelSensitivity: 0.2,  // ホイールの感度（小さいほど細かく変化）
+				zoomingEnabled: true,    // ズーム機能の有効化
+				userZoomingEnabled: true // ユーザーによるズームの有効化
 			});
 
 			// ノードのダブルクリックイベントを設定
