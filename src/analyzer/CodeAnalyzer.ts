@@ -102,19 +102,14 @@ export class CodeAnalyzer {
         }
     }
 
-    private convertToFunctionInfo(
+    private async convertToFunctionInfoRecursive(
         item: vscode.CallHierarchyItem,
-        _depth: number,
-        _maxDepth: number
-    ): FunctionInfo {
-        console.log('Converting CallHierarchyItem to FunctionInfo:', {
-            name: item.name,
-            uri: item.uri.toString(),
-            range: item.range,
-            fsPath: item.uri.fsPath
-        });
-
-        const functionInfo = {
+        depth: number,
+        maxDepth: number,
+        isExcluded: (name: string) => boolean,
+        direction: 'callee' | 'caller'
+    ): Promise<FunctionInfo> {
+        const functionInfo: FunctionInfo = {
             name: item.name,
             uri: item.uri,
             range: item.range,
@@ -127,14 +122,41 @@ export class CodeAnalyzer {
             callees: []
         };
 
-        console.log('Converted FunctionInfo:', functionInfo);
+        if (depth < maxDepth) {
+            if (direction === 'callee') {
+                const callees = await this.getCallees(item);
+                for (const callee of callees) {
+                    if (callee.fromRanges.length > 0) {
+                        if (!isExcluded(callee.to.name)) {
+                            const calleeInfo = await this.convertToFunctionInfoRecursive(
+                                callee.to, depth + 1, maxDepth, isExcluded, 'callee'
+                            );
+                            functionInfo.callees.push(calleeInfo);
+                        }
+                    }
+                }
+            } else if (direction === 'caller') {
+                const callers = await this.getCallers(item);
+                for (const caller of callers) {
+                    if (caller.fromRanges.length > 0) {
+                        if (!isExcluded(caller.from.name)) {
+                            const callerInfo = await this.convertToFunctionInfoRecursive(
+                                caller.from, depth + 1, maxDepth, isExcluded, 'caller'
+                            );
+                            functionInfo.callers.push(callerInfo);
+                        }
+                    }
+                }
+            }
+        }
         return functionInfo;
     }
 
     public async analyzeFunction(
         document: vscode.TextDocument,
         position: vscode.Position,
-        maxDepth = 2
+        calleeLevels = 2,
+        callerLevels = 2
     ): Promise<FunctionInfo | undefined> {
         try {
             console.log('Starting function analysis...');
@@ -145,7 +167,6 @@ export class CodeAnalyzer {
             }
 
             console.log('Found call hierarchy item:', item.name);
-            const rootFunction = this.convertToFunctionInfo(item, 0, maxDepth);
 
             // 除外する関数名パターン（operatorや予約語など）
             const excludePatterns = [
@@ -158,33 +179,23 @@ export class CodeAnalyzer {
                 return excludePatterns.some(pattern => pattern.test(name));
             }
 
-            // 呼び出し元の解析
+            // 呼び出し先（callee）方向のツリー
+            const rootFunction = await this.convertToFunctionInfoRecursive(
+                item, 0, calleeLevels, isExcluded, 'callee'
+            );
+
+            // 呼び出し元（caller）方向のツリーも構築
             const callers = await this.getCallers(item);
             for (const caller of callers) {
                 if (caller.fromRanges.length > 0) {
-                    const callerInfo = this.convertToFunctionInfo(caller.from, 1, maxDepth);
-                    if (!isExcluded(callerInfo.name)) {
+                    if (!isExcluded(caller.from.name)) {
+                        const callerInfo = await this.convertToFunctionInfoRecursive(
+                            caller.from, 1, callerLevels, isExcluded, 'caller'
+                        );
                         rootFunction.callers.push(callerInfo);
                     }
                 }
             }
-
-            // 呼び出し先の解析
-            const callees = await this.getCallees(item);
-            for (const callee of callees) {
-                if (callee.fromRanges.length > 0) {
-                    const calleeInfo = this.convertToFunctionInfo(callee.to, 1, maxDepth);
-                    if (!isExcluded(calleeInfo.name)) {
-                        rootFunction.callees.push(calleeInfo);
-                    }
-                }
-            }
-
-            console.log('Function analysis completed:', {
-                name: rootFunction.name,
-                callers: rootFunction.callers.length,
-                callees: rootFunction.callees.length
-            });
 
             return rootFunction;
         } catch (error) {

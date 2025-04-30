@@ -57,7 +57,12 @@ export function activate(context: vscode.ExtensionContext): void {
 			const languageServerStatus = await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider', editor.document.uri);
 			console.log('Language server status:', languageServerStatus ? 'active' : 'inactive');
 
-			const functionInfo = await analyzer.analyzeFunction(editor.document, position);
+			const functionInfo = await analyzer.analyzeFunction(
+				editor.document,
+				position,
+				settings.calleeLevels,
+				settings.callerLevels
+			);
 			if (!functionInfo) {
 				vscode.window.showErrorMessage('No function found at the current position. Make sure the cursor is inside a function definition.');
 				return;
@@ -85,44 +90,54 @@ export function activate(context: vscode.ExtensionContext): void {
 			// グラフデータの生成
 			const nodes: GraphNode[] = [];
 			const edges: GraphEdge[] = [];
+			const addedNodeIds = new Set<string>();
+			const nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }> = {};
 
-			// 中心の関数
-			const rootId = 'root';
-			nodes.push({
-				id: rootId,
-				label: functionInfo.name,
-				location: functionInfo.location
-			});
+			function getNodeId(info: { location: { file: string; line: number; character: number } }): string {
+				return `${info.location.file}:${info.location.line}:${info.location.character}`;
+			}
 
-			// 呼び出し元の関数（設定に基づいて制限）
-			const callers = functionInfo.callers.slice(0, settings.maxNodesPerLevel);
-			callers.forEach((caller, index) => {
-				const callerId = `caller_${index}`;
-				nodes.push({
-					id: callerId,
-					label: caller.name,
-					location: caller.location
-				});
-				edges.push({
-					source: callerId,
-					target: rootId
-				});
-			});
+			function addFunctionInfoToGraph(
+				info: any,
+				parentId: string | null,
+				direction: 'root' | 'caller' | 'callee',
+				depth: number
+			) {
+				const nodeId = getNodeId(info);
+				if (addedNodeIds.has(nodeId)) {
+					return; // 既に探索済みなら再帰しない
+				}
+				if (!addedNodeIds.has(nodeId)) {
+					nodes.push({
+						id: nodeId,
+						label: info.name,
+						location: info.location
+					});
+					addedNodeIds.add(nodeId);
+					nodeMeta[nodeId] = { direction, depth };
+				}
+				if (parentId) {
+					if (direction === 'callee') {
+						edges.push({ source: parentId, target: nodeId });
+					} else if (direction === 'caller') {
+						edges.push({ source: nodeId, target: parentId });
+					}
+				}
+				// 再帰的にcaller/calleeを展開
+				if (info.callees && info.callees.length > 0) {
+					for (const callee of info.callees) {
+						addFunctionInfoToGraph(callee, nodeId, 'callee', depth + 1);
+					}
+				}
+				if (info.callers && info.callers.length > 0) {
+					for (const caller of info.callers) {
+						addFunctionInfoToGraph(caller, nodeId, 'caller', depth + 1);
+					}
+				}
+			}
 
-			// 呼び出し先の関数（設定に基づいて制限）
-			const callees = functionInfo.callees.slice(0, settings.maxNodesPerLevel);
-			callees.forEach((callee, index) => {
-				const calleeId = `callee_${index}`;
-				nodes.push({
-					id: calleeId,
-					label: callee.name,
-					location: callee.location
-				});
-				edges.push({
-					source: rootId,
-					target: calleeId
-				});
-			});
+			// ルートノードから再帰的に展開（中央）
+			addFunctionInfoToGraph(functionInfo, null, 'root', 0);
 
 			// WebViewからのメッセージ受信を設定
 			currentPanel.webview.onDidReceiveMessage(
@@ -159,7 +174,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			);
 
 			// WebViewのHTMLコンテンツ
-			currentPanel.webview.html = getWebviewContent(nodes, edges, settings);
+			currentPanel.webview.html = getWebviewContent(nodes, edges, settings, nodeMeta);
 
 			// WebViewのメッセージングを有効化
 			currentPanel.webview.postMessage({ type: 'ready' });
@@ -179,26 +194,40 @@ function truncateLabel(label: string): string {
 	return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + '...' : label;
 }
 
-function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any): string {
+function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any, nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }>): string {
 	const centerX = 0;
 	const centerY = 0;
 	const xOffset = 300;
 	const yStep = 100;
 
-	// ノードを分類
-	const root = nodes.find(n => n.id === 'root');
-	const callers = nodes.filter(n => n.id.startsWith('caller_'));
-	const callees = nodes.filter(n => n.id.startsWith('callee_'));
+	// direction, depthごとにノードを分類
+	const callerNodes = nodes.filter(n => nodeMeta[n.id]?.direction === 'caller');
+	const calleeNodes = nodes.filter(n => nodeMeta[n.id]?.direction === 'callee');
+	const rootNode = nodes.find(n => nodeMeta[n.id]?.direction === 'root');
 
-	// 位置割り当て
-	const nodePositions: Record<string, {x: number, y: number}> = {};
-	if (root) nodePositions[root.id] = { x: centerX, y: centerY };
-	callers.forEach((n, i) => {
-		nodePositions[n.id] = { x: centerX - xOffset, y: centerY + (i - (callers.length-1)/2) * yStep };
-	});
-	callees.forEach((n, i) => {
-		nodePositions[n.id] = { x: centerX + xOffset, y: centerY + (i - (callees.length-1)/2) * yStep };
-	});
+	// 各階層ごとにY座標を均等割り当て
+	function assignPositions(nodes: GraphNode[], direction: 'caller' | 'callee') {
+		const grouped: Record<number, GraphNode[]> = {};
+		nodes.forEach(n => {
+			const depth = nodeMeta[n.id]?.depth || 1;
+			if (!grouped[depth]) grouped[depth] = [];
+			grouped[depth].push(n);
+		});
+		const positions: Record<string, { x: number, y: number }> = {};
+		Object.entries(grouped).forEach(([depthStr, group]) => {
+			const depth = parseInt(depthStr, 10);
+			const x = centerX + (direction === 'callee' ? 1 : -1) * xOffset * depth;
+			const yStart = centerY - ((group.length - 1) / 2) * yStep;
+			group.forEach((n, i) => {
+				positions[n.id] = { x, y: yStart + i * yStep };
+			});
+		});
+		return positions;
+	}
+	const callerPositions = assignPositions(callerNodes, 'caller');
+	const calleePositions = assignPositions(calleeNodes, 'callee');
+	const nodePositions: Record<string, { x: number, y: number }> = { ...callerPositions, ...calleePositions };
+	if (rootNode) nodePositions[rootNode.id] = { x: centerX, y: centerY };
 
 	const nodesJson = JSON.stringify(nodes.map(node => ({
 		data: {
@@ -206,7 +235,7 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 			label: truncateLabel(node.label),
 			location: node.location
 		},
-		position: nodePositions[node.id] || {x: 0, y: 0}
+		position: nodePositions[node.id] || { x: 0, y: 0 }
 	})));
 	
 	const edgesJson = JSON.stringify(edges.map(edge => ({
@@ -239,10 +268,7 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 	<body>
 		<div id="cy"></div>
 		<script>
-			// VS Code WebView APIの取得
 			const vscode = acquireVsCodeApi();
-
-			// グラフの初期化
 			const cy = cytoscape({
 				container: document.getElementById('cy'),
 				elements: {
@@ -275,57 +301,37 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 				layout: {
 					name: 'preset'
 				},
-				// ズーム設定
-				minZoom: 0.1,  // 最小ズームレベル
-				maxZoom: 10,   // 最大ズームレベル
-				wheelSensitivity: 0.2,  // ホイールの感度（小さいほど細かく変化）
-				zoomingEnabled: true,    // ズーム機能の有効化
-				userZoomingEnabled: true // ユーザーによるズームの有効化
+				minZoom: 0.1,
+				maxZoom: 10,
+				wheelSensitivity: 0.2,
+				zoomingEnabled: true,
+				userZoomingEnabled: true
 			});
-
-			// ノードのダブルクリックイベントを設定
 			cy.on('dblclick', 'node', function(evt) {
 				try {
 					const node = evt.target;
 					const location = node.data('location');
-					console.log('Node clicked:', {
-						id: node.id(),
-						data: node.data(),
-						location: location
-					});
-
 					if (location) {
-						// VS Codeにメッセージを送信
 						const message = {
 							command: 'jumpToFunction',
 							location: location
 						};
-						console.log('Sending message to VS Code:', message);
 						vscode.postMessage(message);
-						console.log('Message sent to VS Code');
-					} else {
-						console.log('No location data found for node');
 					}
 				} catch (error) {
 					console.error('Error in dblclick handler:', error);
 				}
 			});
-
-			// VS Codeからのメッセージ受信を設定
 			window.addEventListener('message', event => {
 				try {
 					const message = event.data;
-					console.log('Received message from VS Code:', message);
 					if (message.type === 'ready') {
-						console.log('WebView is ready');
+						// WebView is ready
 					}
 				} catch (error) {
 					console.error('Error in message handler:', error);
 				}
 			});
-
-			// 初期化完了を通知
-			console.log('WebView initialized');
 		</script>
 	</body>
 	</html>`;
@@ -352,9 +358,4 @@ function getThemeStyles(theme: string): { nodeBackgroundColor: string; nodeTextC
 				edgeColor: '#999'
 			};
 	}
-}
-
-// This method is called when your extension is deactivated
-export function deactivate(): void {
-	// Cleanup code can be added here if needed
 }
