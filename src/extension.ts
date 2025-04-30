@@ -188,13 +188,31 @@ export function activate(context: vscode.ExtensionContext): void {
 	context.subscriptions.push(disposable);
 }
 
-const MAX_LABEL_LENGTH = 20;
+const MAX_LABEL_LENGTH = 30;
 
 function truncateLabel(label: string): string {
-	return label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + '...' : label;
+	console.log('Truncating label:', {
+		original: label,
+		isClassMethod: label.includes('::')
+	});
+	
+	// クラスメソッドの場合は既に「クラス名::関数名」形式になっているので、そのまま返す
+	if (label.includes('::')) {
+		console.log('Returning class method label as is:', label);
+		return label;
+	}
+	// 通常の関数の場合は従来通り関数名のみを返し、長さ制限を適用
+	const truncated = label.length > MAX_LABEL_LENGTH ? label.slice(0, MAX_LABEL_LENGTH - 3) + '...' : label;
+	console.log('Returning truncated label:', truncated);
+	return truncated;
 }
 
 function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any, nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }>): string {
+	console.log('Generating webview content with nodes:', JSON.stringify(nodes.map(n => ({
+		id: n.id,
+		label: n.label,
+		location: n.location
+	})), null, 2));
 	const centerX = 0;
 	const centerY = 0;
 	const xOffset = 300;

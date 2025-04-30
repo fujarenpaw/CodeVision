@@ -35,16 +35,45 @@ export class CodeAnalyzer {
                 document.uri
             );
 
-            console.log('Document symbols:', symbols);
+            console.log('Document symbols:', JSON.stringify(symbols, null, 2));
 
             // カーソル位置にある関数を特定
             let targetFunction: vscode.DocumentSymbol | undefined;
+            let className = '';
             if (symbols) {
                 for (const symbol of symbols) {
-                    if (symbol.kind === vscode.SymbolKind.Function || 
+                    console.log('Checking symbol:', {
+                        name: symbol.name,
+                        kind: symbol.kind,
+                        range: symbol.range
+                    });
+                    
+                    if (symbol.kind === vscode.SymbolKind.Class) {
+                        console.log('Found class:', symbol.name);
+                        // クラス内の関数を探す
+                        if (symbol.range.contains(position)) {
+                            className = symbol.name;
+                            console.log('Cursor is inside class:', className);
+                            for (const child of symbol.children || []) {
+                                console.log('Checking class child:', {
+                                    name: child.name,
+                                    kind: child.kind,
+                                    range: child.range
+                                });
+                                if ((child.kind === vscode.SymbolKind.Function || 
+                                    child.kind === vscode.SymbolKind.Method) &&
+                                    child.range.contains(position)) {
+                                    targetFunction = child;
+                                    console.log('Found method in class:', child.name);
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (symbol.kind === vscode.SymbolKind.Function || 
                         symbol.kind === vscode.SymbolKind.Method) {
                         if (symbol.range.contains(position)) {
                             targetFunction = symbol;
+                            console.log('Found standalone function:', symbol.name);
                             break;
                         }
                     }
@@ -64,8 +93,32 @@ export class CodeAnalyzer {
                 position
             );
 
-            console.log('Call hierarchy items:', items);
-            return items?.[0];
+            console.log('Call hierarchy items before modification:', JSON.stringify(items, null, 2));
+            
+            if (items && items[0]) {
+                // クラスメソッドの場合はクラス名を追加
+                if (items[0].detail) {
+                    // detailフィールドからクラス名を抽出
+                    const detailMatch = items[0].detail.match(/^([\w:]+)\s*-/);
+                    if (detailMatch && detailMatch[1]) {
+                        className = detailMatch[1];
+                        console.log('Extracted class name from detail:', className);
+                    }
+                }
+                
+                if (className) {
+                    const originalName = items[0].name;
+                    items[0].name = `${className}::${items[0].name}`;
+                    console.log('Modified function name:', {
+                        original: originalName,
+                        className: className,
+                        modified: items[0].name
+                    });
+                }
+                console.log('Final call hierarchy item:', JSON.stringify(items[0], null, 2));
+                return items[0];
+            }
+            return undefined;
         } catch (error) {
             console.error('Error in getCallHierarchyItem:', error);
             return undefined;
@@ -109,8 +162,22 @@ export class CodeAnalyzer {
         isExcluded: (name: string) => boolean,
         direction: 'callee' | 'caller'
     ): Promise<FunctionInfo> {
+        // detailからクラス名を抽出
+        let className = '';
+        if (item.detail) {
+            const detailMatch = item.detail.match(/^([\w:]+)\s*-/);
+            if (detailMatch && detailMatch[1]) {
+                className = detailMatch[1];
+                console.log('Extracted class name from detail (recursive):', className);
+            }
+        }
+        let displayName = item.name;
+        if (className) {
+            displayName = `${className}::${item.name}`;
+        }
+        console.log('FunctionInfo name:', displayName);
         const functionInfo: FunctionInfo = {
-            name: item.name,
+            name: displayName,
             uri: item.uri,
             range: item.range,
             location: {
