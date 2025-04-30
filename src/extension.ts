@@ -90,7 +90,8 @@ export function activate(context: vscode.ExtensionContext): void {
 			const rootId = 'root';
 			nodes.push({
 				id: rootId,
-				label: functionInfo.name
+				label: functionInfo.name,
+				location: functionInfo.location
 			});
 
 			// 呼び出し元の関数（設定に基づいて制限）
@@ -99,7 +100,8 @@ export function activate(context: vscode.ExtensionContext): void {
 				const callerId = `caller_${index}`;
 				nodes.push({
 					id: callerId,
-					label: caller.name
+					label: caller.name,
+					location: caller.location
 				});
 				edges.push({
 					source: callerId,
@@ -113,7 +115,8 @@ export function activate(context: vscode.ExtensionContext): void {
 				const calleeId = `callee_${index}`;
 				nodes.push({
 					id: calleeId,
-					label: callee.name
+					label: callee.name,
+					location: callee.location
 				});
 				edges.push({
 					source: rootId,
@@ -121,8 +124,46 @@ export function activate(context: vscode.ExtensionContext): void {
 				});
 			});
 
+			// WebViewからのメッセージ受信を設定
+			currentPanel.webview.onDidReceiveMessage(
+				async message => {
+					console.log('Received message from WebView:', message);
+					if (message.command === 'jumpToFunction') {
+						const location = message.location;
+						console.log('Location data:', location);
+						if (location) {
+							try {
+								const uri = vscode.Uri.file(location.file);
+								console.log('URI:', uri.toString());
+								const position = new vscode.Position(location.line, location.character);
+								const range = new vscode.Range(position, position);
+								console.log('Opening document at position:', {
+									file: location.file,
+									line: location.line,
+									character: location.character
+								});
+								await vscode.window.showTextDocument(uri, { selection: range });
+								console.log('Successfully opened document at position:', position);
+							} catch (error) {
+								console.error('Error opening document:', error);
+								vscode.window.showErrorMessage(`Failed to open document: ${error instanceof Error ? error.message : String(error)}`);
+							}
+						} else {
+							console.error('No location data provided in message');
+							vscode.window.showErrorMessage('No location data provided');
+						}
+					}
+				},
+				undefined,
+				context.subscriptions
+			);
+
 			// WebViewのHTMLコンテンツ
 			currentPanel.webview.html = getWebviewContent(nodes, edges, settings);
+
+			// WebViewのメッセージングを有効化
+			currentPanel.webview.postMessage({ type: 'ready' });
+			console.log('WebView ready message sent');
 		} catch (error) {
 			vscode.window.showErrorMessage(`Error showing butterfly graph: ${error instanceof Error ? error.message : String(error)}`);
 		}
@@ -162,7 +203,8 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 	const nodesJson = JSON.stringify(nodes.map(node => ({
 		data: {
 			id: node.id,
-			label: truncateLabel(node.label)
+			label: truncateLabel(node.label),
+			location: node.location
 		},
 		position: nodePositions[node.id] || {x: 0, y: 0}
 	})));
@@ -197,6 +239,10 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 	<body>
 		<div id="cy"></div>
 		<script>
+			// VS Code WebView APIの取得
+			const vscode = acquireVsCodeApi();
+
+			// グラフの初期化
 			const cy = cytoscape({
 				container: document.getElementById('cy'),
 				elements: {
@@ -211,7 +257,8 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 							'text-valign': 'center',
 							'text-halign': 'center',
 							'background-color': '${themeStyles.nodeBackgroundColor}',
-							'color': '${themeStyles.nodeTextColor}'
+							'color': '${themeStyles.nodeTextColor}',
+							'cursor': 'pointer'
 						}
 					},
 					{
@@ -229,6 +276,50 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 					name: 'preset'
 				}
 			});
+
+			// ノードのダブルクリックイベントを設定
+			cy.on('dblclick', 'node', function(evt) {
+				try {
+					const node = evt.target;
+					const location = node.data('location');
+					console.log('Node clicked:', {
+						id: node.id(),
+						data: node.data(),
+						location: location
+					});
+
+					if (location) {
+						// VS Codeにメッセージを送信
+						const message = {
+							command: 'jumpToFunction',
+							location: location
+						};
+						console.log('Sending message to VS Code:', message);
+						vscode.postMessage(message);
+						console.log('Message sent to VS Code');
+					} else {
+						console.log('No location data found for node');
+					}
+				} catch (error) {
+					console.error('Error in dblclick handler:', error);
+				}
+			});
+
+			// VS Codeからのメッセージ受信を設定
+			window.addEventListener('message', event => {
+				try {
+					const message = event.data;
+					console.log('Received message from VS Code:', message);
+					if (message.type === 'ready') {
+						console.log('WebView is ready');
+					}
+				} catch (error) {
+					console.error('Error in message handler:', error);
+				}
+			});
+
+			// 初期化完了を通知
+			console.log('WebView initialized');
 		</script>
 	</body>
 	</html>`;

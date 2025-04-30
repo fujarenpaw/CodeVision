@@ -4,6 +4,11 @@ export interface FunctionInfo {
     name: string;
     uri: vscode.Uri;
     range: vscode.Range;
+    location: {
+        file: string;
+        line: number;
+        character: number;
+    };
     callers: FunctionInfo[];
     callees: FunctionInfo[];
 }
@@ -102,13 +107,28 @@ export class CodeAnalyzer {
         _depth: number,
         _maxDepth: number
     ): FunctionInfo {
-        return {
+        console.log('Converting CallHierarchyItem to FunctionInfo:', {
+            name: item.name,
+            uri: item.uri.toString(),
+            range: item.range,
+            fsPath: item.uri.fsPath
+        });
+
+        const functionInfo = {
             name: item.name,
             uri: item.uri,
             range: item.range,
+            location: {
+                file: item.uri.fsPath,
+                line: item.range.start.line,
+                character: item.range.start.character
+            },
             callers: [],
             callees: []
         };
+
+        console.log('Converted FunctionInfo:', functionInfo);
+        return functionInfo;
     }
 
     public async analyzeFunction(

@@ -3,6 +3,11 @@
 export interface GraphNode {
     id: string;
     label: string;
+    location?: {
+        file: string;
+        line: number;
+        character: number;
+    };
     data?: Record<string, unknown>;
 }
 
