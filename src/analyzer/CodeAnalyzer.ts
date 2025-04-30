@@ -147,12 +147,25 @@ export class CodeAnalyzer {
             console.log('Found call hierarchy item:', item.name);
             const rootFunction = this.convertToFunctionInfo(item, 0, maxDepth);
 
+            // 除外する関数名パターン（operatorや予約語など）
+            const excludePatterns = [
+                /^operator[\s\S]*/, // operatorで始まるもの全て
+                /^std::/,             // 標準ライブラリ関数
+                /^__.*__$/,           // __で囲まれた特殊関数
+                /^~.*/,               // デストラクタ
+            ];
+            function isExcluded(name: string): boolean {
+                return excludePatterns.some(pattern => pattern.test(name));
+            }
+
             // 呼び出し元の解析
             const callers = await this.getCallers(item);
             for (const caller of callers) {
                 if (caller.fromRanges.length > 0) {
                     const callerInfo = this.convertToFunctionInfo(caller.from, 1, maxDepth);
-                    rootFunction.callers.push(callerInfo);
+                    if (!isExcluded(callerInfo.name)) {
+                        rootFunction.callers.push(callerInfo);
+                    }
                 }
             }
 
@@ -161,7 +174,9 @@ export class CodeAnalyzer {
             for (const callee of callees) {
                 if (callee.fromRanges.length > 0) {
                     const calleeInfo = this.convertToFunctionInfo(callee.to, 1, maxDepth);
-                    rootFunction.callees.push(calleeInfo);
+                    if (!isExcluded(calleeInfo.name)) {
+                        rootFunction.callees.push(calleeInfo);
+                    }
                 }
             }
 
