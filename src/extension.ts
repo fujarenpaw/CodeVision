@@ -184,7 +184,7 @@ export function activate(context: vscode.ExtensionContext): void {
 		}
 	};
 
-	const disposable = vscode.commands.registerCommand('butterfly-graph.show', showButterflyGraph);
+	const disposable = vscode.commands.registerCommand('codevision.showButterflyGraph', showButterflyGraph);
 	context.subscriptions.push(disposable);
 }
 

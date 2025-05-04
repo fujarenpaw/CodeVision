@@ -1,26 +1,29 @@
 {
   "name": "codevision",
   "displayName": "CodeVision",
-  "description": "Visualize function call relationships as a butterfly graph",
+  "description": "Visualize code structure with butterfly graphs",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.60.0"
   },
   "categories": [
     "Other"
+  ],
+  "activationEvents": [
+    "onCommand:codevision.showButterflyGraph"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "butterfly-graph.show",
+        "command": "codevision.showButterflyGraph",
         "title": "Show Butterfly Graph"
       }
     ],
     "menus": {
       "editor/context": [
         {
-          "command": "butterfly-graph.show",
+          "command": "codevision.showButterflyGraph",
           "group": "navigation",
           "when": "editorHasSelection"
         }
@@ -65,21 +68,27 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "test": "node ./out/test/runTests.js"
+    "test": "node ./out/test/runTest.js",
+    "test:coverage": "nyc npm run test",
+    "test:watch": "npm run test -- --watch"
   },
   "devDependencies": {
-    "@types/cytoscape": "^3.21.9",
+    "@types/vscode": "^1.60.0",
     "@types/glob": "^7.1.3",
-    "@types/mocha": "^8.2.3",
-    "@types/node": "^14.18.63",
-    "@types/vscode": "^1.99.1",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "eslint": "^7.32.0",
+    "@types/mocha": "^8.2.2",
+    "@types/node": "14.x",
+    "eslint": "^7.27.0",
+    "@typescript-eslint/eslint-plugin": "^4.26.0",
+    "@typescript-eslint/parser": "^4.26.0",
     "glob": "^7.1.7",
     "mocha": "^8.4.0",
-    "typescript": "^4.9.5",
-    "vscode-test": "^1.6.1"
+    "typescript": "^4.3.2",
+    "vscode-test": "^1.5.2",
+    "@types/chai": "^4.3.0",
+    "chai": "^4.3.4",
+    "sinon": "^9.2.4",
+    "@types/sinon": "^9.0.11",
+    "nyc": "^15.1.0"
   },
   "dependencies": {
     "cytoscape": "^3.23.0"
