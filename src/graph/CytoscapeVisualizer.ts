@@ -129,7 +129,9 @@ export class CytoscapeVisualizer implements GraphVisualizer {
             handler({
                 id: node.id(),
                 label: node.data('label'),
-                data: node.data()
+                type: node.data('type'),
+                data: node.data(),
+                location: node.data('location')
             });
         });
     }
