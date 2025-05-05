@@ -128,6 +128,83 @@ npm run test:watch
 - `should apply theme`
   - 目的: テーマが正しく適用されることを確認
 
+### 言語サポート (`languageSupport.test.ts`)
+
+#### C/C++言語サポート
+- `should detect function definition`
+  - 目的: C/C++の関数定義が正しく検出されることを確認
+  - 入力: C/C++のサンプルコード
+  - 期待結果: 関数名、パラメータ情報の取得
+- `should detect function calls`
+  - 目的: C/C++の関数呼び出しが正しく検出されることを確認
+  - 入力: 関数呼び出しを含むC/C++コード
+  - 期待結果: 呼び出し関数のリスト
+- `should handle class methods`
+  - 目的: クラスメソッドが正しく処理されることを確認
+  - 入力: クラス定義を含むC/C++コード
+  - 期待結果: メソッド情報の取得
+
+#### C#言語サポート
+- `should detect function definition`
+  - 目的: C#のメソッド定義が正しく検出されることを確認
+  - 入力: C#のサンプルコード
+  - 期待結果: メソッド名、パラメータ情報の取得
+- `should detect function calls`
+  - 目的: C#のメソッド呼び出しが正しく検出されることを確認
+  - 入力: メソッド呼び出しを含むC#コード
+  - 期待結果: 呼び出しメソッドのリスト
+- `should handle async methods`
+  - 目的: 非同期メソッドが正しく処理されることを確認
+  - 入力: async/awaitを含むC#コード
+  - 期待結果: 非同期メソッド情報の取得
+
+#### Python言語サポート
+- `should detect function definition`
+  - 目的: Python関数定義が正しく検出されることを確認
+  - 入力: Pythonのサンプルコード
+  - 期待結果: 関数名、パラメータ情報の取得
+- `should detect function calls`
+  - 目的: Python関数呼び出しが正しく検出されることを確認
+  - 入力: 関数呼び出しを含むPythonコード
+  - 期待結果: 呼び出し関数のリスト
+- `should handle class methods`
+  - 目的: クラスメソッドが正しく処理されることを確認
+  - 入力: クラス定義を含むPythonコード
+  - 期待結果: メソッド情報の取得
+- `should handle async functions`
+  - 目的: 非同期関数が正しく処理されることを確認
+  - 入力: async/awaitを含むPythonコード
+  - 期待結果: 非同期関数情報の取得
+
+#### エッジケース
+- `should handle nested functions`
+  - 目的: ネストされた関数定義が正しく処理されることを確認
+  - 入力: 内部関数を含むコード
+  - 期待結果: 外部関数と内部関数の関係の取得
+- `should handle function overloading`
+  - 目的: 関数のオーバーロードが正しく処理されることを確認
+  - 入力: オーバーロードされた関数定義
+  - 期待結果: オーバーロードされた関数の情報取得
+- `should handle lambda functions`
+  - 目的: ラムダ関数が正しく処理されることを確認
+  - 入力: ラムダ関数を含むコード
+  - 期待結果: ラムダ関数の情報取得
+
+### 言語サポートのテスト実行方法
+
+```bash
+# 言語サポートのテストのみ実行
+npm test -- --grep "Language Support"
+
+# 特定の言語のテストのみ実行
+npm test -- --grep "C/C++ Language Support"
+npm test -- --grep "C# Language Support"
+npm test -- --grep "Python Language Support"
+
+# エッジケースのテストのみ実行
+npm test -- --grep "Edge Cases"
+```
+
 ## テスト結果の解釈
 
 ### 成功条件
@@ -175,4 +252,21 @@ npm test -- --grep "テストケース名" --inspect-brk
 3. **ログの確認**
 - テスト実行時のログを確認
 - エラーメッセージの詳細を確認
-- スタックトレースの分析 
+- スタックトレースの分析
+
+### 言語サポートのトラブルシューティング
+
+1. **LSPサーバーの問題**
+   - 各言語のLSPサーバーが正しくインストールされているか確認
+   - LSPサーバーの設定が正しいか確認
+   - LSPサーバーのログを確認
+
+2. **パース失敗**
+   - 言語固有の構文が正しいか確認
+   - コードのフォーマットが正しいか確認
+   - 必要なインポート文が含まれているか確認
+
+3. **非同期処理の問題**
+   - LSPリクエストの完了を待っているか確認
+   - タイムアウト設定が適切か確認
+   - 非同期処理のエラーハンドリングを確認 
