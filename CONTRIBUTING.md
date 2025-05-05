@@ -1,6 +1,6 @@
-# Contributing to Butterfly Function
+# Contributing to Code Vision
 
-Thank you for your interest in contributing to Butterfly Function! This document provides guidelines and instructions for contributing to this project.
+Thank you for your interest in contributing to Code Vision! This document provides guidelines and instructions for contributing to this project.
 
 ## Code of Conduct
 
@@ -39,11 +39,17 @@ If you have a suggestion for a new feature or enhancement, please include as muc
 5. Make sure your code lints
 6. Issue that pull request!
 
+## Prerequisites
+
+- Node.js 14.x or higher
+- npm 6.x or higher
+- Visual Studio Code Extension Development Tools
+
 ## Development Setup
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/your-username/butterfly-function.git
+   git clone https://github.com/fujarenpaw/CodeVision.git
    ```
 
 2. Install dependencies
@@ -74,19 +80,10 @@ If you have a suggestion for a new feature or enhancement, please include as muc
 - Use enums for fixed sets of values
 - Use async/await instead of raw promises
 
-### Testing Guidelines
-
-- Write unit tests for all new features
-- Maintain existing test coverage
-- Use meaningful test descriptions
-- Mock external dependencies
-
 ## Commit Messages
 
 Please follow these guidelines for commit messages:
 
-- Use the present tense ("Add feature" not "Added feature")
-- Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
 - Limit the first line to 72 characters or less
 - Reference issues and pull requests liberally after the first line
 
@@ -94,8 +91,7 @@ Please follow these guidelines for commit messages:
 
 1. Update the README.md with details of changes if needed
 2. Update the documentation with any new features
-3. The PR will be merged once you have the sign-off of at least one other developer
-4. Make sure all tests pass
+3. Make sure all tests pass
 
 ## Additional Notes
 

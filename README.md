@@ -1,4 +1,4 @@
-# Butterfly Function - Visual Studio Code Extension
+# Code Vision - Visual Studio Code Extension
 
 [![Version](https://img.shields.io/visual-studio-marketplace/v/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Butterfly Function is a Visual Studio Code extension that visualizes function call relationships in your codebase using a butterfly graph. This visualization helps developers better understand and explore their code by showing both callers and callees of selected functions.
+Code Vision is a Visual Studio Code extension that visualizes function call relationships in your codebase using a butterfly graph (Call Tree). This visualization helps developers better understand and explore their code by showing both callers and callees of selected functions.
 
 ![Demo](path/to/demo.gif)
 
@@ -49,9 +49,8 @@ Butterfly Function is a Visual Studio Code extension that visualizes function ca
 ### Basic Controls
 
 - **Double-click a node**: Jump to function definition
-- **Hover over a node**: View function details
 - **Use mouse wheel**: Zoom in/out
-- **Click and drag**: Pan the graph
+- **Click and drag**: Move the node
 
 ## Configuration
 
@@ -87,30 +86,6 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Development
-
-### Prerequisites
-
-- Node.js 14.x or higher
-- npm 6.x or higher
-- Visual Studio Code Extension Development Tools
-
-### Setup
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/your-username/butterfly-function.git
-   ```
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-3. Open in VS Code
-   ```bash
-   code .
-   ```
-4. Press F5 to start debugging
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -120,11 +95,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Cytoscape.js](https://js.cytoscape.org/) for graph visualization
 - VS Code Extension API
 - Language Server Protocol
-
-## Support
-
-- [GitHub Issues](https://github.com/your-username/butterfly-function/issues)
-- [Documentation](https://github.com/your-username/butterfly-function/wiki)
 
 ---
 

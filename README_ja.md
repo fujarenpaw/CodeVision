@@ -1,4 +1,4 @@
-# Butterfly Function - Visual Studio Code拡張機能
+# Code Vision - Visual Studio Code拡張機能
 
 [![Version](https://img.shields.io/visual-studio-marketplace/v/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
 [![Installs](https://img.shields.io/visual-studio-marketplace/i/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
@@ -6,7 +6,7 @@
 
 ## 概要
 
-Butterfly Functionは、Visual Studio Codeの拡張機能で、コードベース内の関数呼び出し関係をバタフライグラフとして視覚化します。この視覚化により、選択した関数の呼び出し元と呼び出し先を表示することで、開発者がコードをより理解しやすく、探索しやすくなります。
+Code Visionは、Visual Studio Codeの拡張機能で、コードベース内の関数呼び出し関係をバタフライグラフ(コールツリー)として視覚化します。この視覚化により、選択した関数の呼び出し元と呼び出し先を表示することで、開発者がコードをより理解しやすく、探索しやすくなります。
 
 ![デモ](path/to/demo.gif)
 
@@ -49,9 +49,8 @@ Butterfly Functionは、Visual Studio Codeの拡張機能で、コードベー�
 ### 基本操作
 
 - **ノードをダブルクリック**: 関数定義にジャンプ
-- **ノードにマウスオーバー**: 関数の詳細を表示
 - **マウスホイール**: ズームイン/アウト
-- **クリック＆ドラッグ**: グラフをパン
+- **クリック＆ドラッグ**: ノードを動かす
 
 ## 設定
 
@@ -87,30 +86,6 @@ Butterfly Functionは、Visual Studio Codeの拡張機能で、コードベー�
 4. ブランチにプッシュ（`git push origin feature/amazing-feature`）
 5. プルリクエストを作成
 
-## 開発
-
-### 前提条件
-
-- Node.js 14.x以上
-- npm 6.x以上
-- Visual Studio Code拡張機能開発ツール
-
-### セットアップ
-
-1. リポジトリをクローン
-   ```bash
-   git clone https://github.com/your-username/butterfly-function.git
-   ```
-2. 依存関係をインストール
-   ```bash
-   npm install
-   ```
-3. VS Codeで開く
-   ```bash
-   code .
-   ```
-4. F5キーを押してデバッグを開始
-
 ## ライセンス
 
 このプロジェクトはMITライセンスの下で公開されています - 詳細は[LICENSE](LICENSE)ファイルを参照してください。
@@ -120,11 +95,6 @@ Butterfly Functionは、Visual Studio Codeの拡張機能で、コードベー�
 - グラフ視覚化に[Cytoscape.js](https://js.cytoscape.org/)を使用
 - VS Code拡張機能API
 - Language Server Protocol
-
-## サポート
-
-- [GitHub Issues](https://github.com/your-username/butterfly-function/issues)
-- [ドキュメント](https://github.com/your-username/butterfly-function/wiki)
 
 ---
 
