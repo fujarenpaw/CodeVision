@@ -70,12 +70,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			// WebViewパネルの作成または再利用
 			if (currentPanel) {
-				currentPanel.reveal(vscode.ViewColumn.Beside);
+				currentPanel.reveal(vscode.ViewColumn.Active);
 			} else {
 				currentPanel = vscode.window.createWebviewPanel(
 					'butterflyGraph',
 					'Butterfly Graph',
-					vscode.ViewColumn.Beside,
+					vscode.ViewColumn.Active,
 					{
 						enableScripts: true,
 						retainContextWhenHidden: true
