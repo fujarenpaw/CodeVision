@@ -94,7 +94,9 @@ export function activate(context: vscode.ExtensionContext): void {
 			const nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }> = {};
 
 			function getNodeId(info: { location: { file: string; line: number; character: number } }): string {
-				return `${info.location.file}:${info.location.line}:${info.location.character}`;
+				// パス区切りを「/」に統一
+				const normalizedFile = info.location.file.replace(/\\/g, '/');
+				return `${normalizedFile}:${info.location.line}:${info.location.character}`;
 			}
 
 			function addFunctionInfoToGraph(
@@ -174,7 +176,7 @@ export function activate(context: vscode.ExtensionContext): void {
 			);
 
 			// WebViewのHTMLコンテンツ
-			currentPanel.webview.html = getWebviewContent(nodes, edges, settings, nodeMeta);
+			currentPanel.webview.html = getWebviewContent(nodes, edges, settings, nodeMeta, getNodeId(functionInfo));
 
 			// WebViewのメッセージングを有効化
 			currentPanel.webview.postMessage({ type: 'ready' });
@@ -207,12 +209,12 @@ function truncateLabel(label: string): string {
 	return truncated;
 }
 
-function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any, nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }>): string {
+function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any, nodeMeta: Record<string, { direction: 'root' | 'caller' | 'callee'; depth: number }>, selectedNodeId?: string): string {
 	console.log('Generating webview content with nodes:', JSON.stringify(nodes.map(n => ({
 		id: n.id,
 		label: n.label,
 		location: n.location
-	})), null, 2));
+	}))));
 	const centerX = 0;
 	const centerY = 0;
 	const xOffset = 300;
@@ -306,6 +308,12 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 						}
 					},
 					{
+						selector: 'node.selected',
+						style: {
+							'color': '${themeStyles.selectedNodeTextColor}'
+						}
+					},
+					{
 						selector: 'edge',
 						style: {
 							'width': 2,
@@ -325,6 +333,10 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 				zoomingEnabled: true,
 				userZoomingEnabled: true
 			});
+
+			// 初期表示時に選択されたノードをハイライト
+			${selectedNodeId ? `highlightSelectedNode('${selectedNodeId}');` : ''}
+
 			cy.on('dblclick', 'node', function(evt) {
 				try {
 					const node = evt.target;
@@ -340,11 +352,28 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 					console.error('Error in dblclick handler:', error);
 				}
 			});
+
+			// 選択された関数のノードにselectedクラスを適用
+			function highlightSelectedNode(nodeId) {
+				console.log('highlightSelectedNode called with nodeId:', nodeId);
+				console.log('All node IDs:', cy.nodes().map(n => n.id()));
+				cy.nodes().removeClass('selected');
+				const selectedNode = cy.getElementById(nodeId);
+				if (selectedNode.length > 0) {
+					selectedNode.addClass('selected');
+					console.log('selectedNode classes after addClass:', selectedNode.classes());
+				} else {
+					console.log('No node found for nodeId:', nodeId);
+				}
+			}
+
 			window.addEventListener('message', event => {
 				try {
 					const message = event.data;
 					if (message.type === 'ready') {
 						// WebView is ready
+					} else if (message.command === 'highlightNode') {
+						highlightSelectedNode(message.nodeId);
 					}
 				} catch (error) {
 					console.error('Error in message handler:', error);
@@ -355,25 +384,41 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 	</html>`;
 }
 
-function getThemeStyles(theme: string): { nodeBackgroundColor: string; nodeTextColor: string; edgeColor: string } {
+function getThemeStyles(theme: string): { 
+	nodeBackgroundColor: string; 
+	nodeTextColor: string; 
+	edgeColor: string;
+	selectedNodeBackgroundColor: string;
+	selectedNodeBorderColor: string;
+	selectedNodeTextColor: string;
+} {
 	switch (theme) {
 		case 'dark':
 			return {
 				nodeBackgroundColor: '#333',
 				nodeTextColor: '#fff',
-				edgeColor: '#666'
+				edgeColor: '#666',
+				selectedNodeBackgroundColor: '#ff0000',
+				selectedNodeBorderColor: '#00ff00',
+				selectedNodeTextColor: '#ffff00'
 			};
 		case 'light':
 			return {
 				nodeBackgroundColor: '#f0f0f0',
 				nodeTextColor: '#000',
-				edgeColor: '#999'
+				edgeColor: '#999',
+				selectedNodeBackgroundColor: '#ff0000',
+				selectedNodeBorderColor: '#008000',
+				selectedNodeTextColor: '#1976d2'
 			};
 		default:
 			return {
 				nodeBackgroundColor: '#666',
 				nodeTextColor: '#fff',
-				edgeColor: '#999'
+				edgeColor: '#999',
+				selectedNodeBackgroundColor: '#ff0000',
+				selectedNodeBorderColor: '#00ff00',
+				selectedNodeTextColor: '#00ffff'
 			};
 	}
 }
