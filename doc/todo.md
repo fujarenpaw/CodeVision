@@ -108,6 +108,7 @@
 ## 7. 将来の拡張
 
 ### 7.1 追加言語サポート
+- [ ] C#
 - [ ] Java
 - [ ] JavaScript/TypeScript
 - [ ] Go

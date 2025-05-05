@@ -12,7 +12,8 @@ export function activate(context: vscode.ExtensionContext): void {
 	console.log('Butterfly Graph extension is now active!');
 	
 	// サポートされている言語の確認
-	const supportedLanguages = ['cpp', 'c', 'csharp', 'python'];
+	const supportedLanguages = ['cpp', 'c', 'python'];
+	// const supportedLanguages = ['cpp', 'c', 'csharp', 'python']; // C#は一旦サポートしない
 	console.log('Supported languages:', supportedLanguages);
 
 	const analyzer = new CodeAnalyzer();
