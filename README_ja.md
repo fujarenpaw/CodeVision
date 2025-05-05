@@ -69,6 +69,8 @@ Code Visionは、Visual Studio Codeの拡張機能で、コードベース内の
 
 - Visual Studio Code 1.60.0以上
 - プログラミング言語のLanguage Server Protocol (LSP)サポート
+  - C/C++の場合: "C/C++"拡張機能（ms-vscode.cpptools）をインストール
+  - Pythonの場合: "Python"拡張機能（ms-python.python）をインストール
 
 ## 既知の問題
 

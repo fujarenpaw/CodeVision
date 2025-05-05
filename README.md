@@ -69,6 +69,8 @@ The extension can be configured through VS Code settings:
 
 - Visual Studio Code 1.60.0 or higher
 - Language Server Protocol (LSP) support for your programming language
+  - For C/C++: Install "C/C++" extension (ms-vscode.cpptools)
+  - For Python: Install "Python" extension (ms-python.python)
 
 ## Known Issues
 
