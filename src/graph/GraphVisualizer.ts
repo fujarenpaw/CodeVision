@@ -3,6 +3,7 @@
 export interface GraphNode {
     id: string;
     label: string;
+    type: 'class' | 'function';
     location?: {
         file: string;
         line: number;

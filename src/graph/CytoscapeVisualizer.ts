@@ -79,20 +79,21 @@ export class CytoscapeVisualizer implements GraphVisualizer {
                 data: {
                     id: node.id,
                     label: node.label,
-                    ...node.data
+                    type: node.type,
+                    ...(node.location ? { location: node.location } : {})
                 }
             })),
             edges: edges.map(edge => ({
                 data: {
                     source: edge.source,
                     target: edge.target,
-                    ...edge.data
+                    ...(edge.data ? edge.data : {})
                 }
             }))
         };
 
         this.cy.elements().remove();
-        this.cy.add(elements);
+        this.cy.add(elements as any);
     }
 
     setLayout(layout: GraphLayout): void {

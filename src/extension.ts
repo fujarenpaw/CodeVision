@@ -101,23 +101,45 @@ export function activate(context: vscode.ExtensionContext): void {
 
 			function addFunctionInfoToGraph(
 				info: any,
-				parentId: string | null,
+				parentId: string | null | undefined,
 				direction: 'root' | 'caller' | 'callee',
-				depth: number
+				depth: number,
+				parentClassName?: string | undefined
 			) {
 				const nodeId = getNodeId(info);
 				if (addedNodeIds.has(nodeId)) {
 					return; // 既に探索済みなら再帰しない
 				}
-				if (!addedNodeIds.has(nodeId)) {
-					nodes.push({
-						id: nodeId,
-						label: info.name,
-						location: info.location
-					});
-					addedNodeIds.add(nodeId);
-					nodeMeta[nodeId] = { direction, depth };
+				// --- クラス名抽出 ---
+				let className: string | undefined = undefined;
+				if (info.name && info.name.includes('::')) {
+					const match = info.name.match(/^(.*?)::(.*)$/);
+					if (match) {
+						className = match[1];
+					}
+				} else if (info.detail) {
+					// detailからクラス名を抽出（例: "DebugTestA - ..."）
+					const detailMatch = info.detail.match(/^([\w:]+)\s*-/);
+					if (detailMatch && detailMatch[1]) {
+						className = detailMatch[1];
+					}
+				} else if (parentClassName) {
+					className = parentClassName;
 				}
+				// --- 関数ノード追加 ---
+				let functionLabel = info.name;
+				if (className && info.name && !info.name.includes('::')) {
+					functionLabel = `${className}::${info.name}`;
+				}
+				nodes.push({
+					id: nodeId,
+					label: functionLabel,
+					type: 'function',
+					location: info.location
+				});
+				addedNodeIds.add(nodeId);
+				nodeMeta[nodeId] = { direction, depth };
+				// --- 既存の親子エッジ ---
 				if (parentId) {
 					if (direction === 'callee') {
 						edges.push({ source: parentId, target: nodeId });
@@ -128,12 +150,12 @@ export function activate(context: vscode.ExtensionContext): void {
 				// 再帰的にcaller/calleeを展開
 				if (info.callees && info.callees.length > 0) {
 					for (const callee of info.callees) {
-						addFunctionInfoToGraph(callee, nodeId, 'callee', depth + 1);
+						addFunctionInfoToGraph(callee, nodeId, 'callee', depth + 1, className || parentClassName);
 					}
 				}
 				if (info.callers && info.callers.length > 0) {
 					for (const caller of info.callers) {
-						addFunctionInfoToGraph(caller, nodeId, 'caller', depth + 1);
+						addFunctionInfoToGraph(caller, nodeId, 'caller', depth + 1, className || parentClassName);
 					}
 				}
 			}
@@ -239,7 +261,12 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 			const x = centerX + (direction === 'callee' ? 1 : -1) * xOffset * depth;
 			const yStart = centerY - ((group.length - 1) / 2) * yStep;
 			group.forEach((n, i) => {
-				positions[n.id] = { x, y: yStart + i * yStep };
+				// クラスノードは上にずらす
+				if (n.type === 'class') {
+					positions[n.id] = { x, y: yStart + i * yStep - 150 };
+				} else {
+					positions[n.id] = { x, y: yStart + i * yStep };
+				}
 			});
 		});
 		return positions;
@@ -253,6 +280,7 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 		data: {
 			id: node.id,
 			label: truncateLabel(node.label),
+			type: node.type,
 			location: node.location
 		},
 		position: nodePositions[node.id] || { x: 0, y: 0 }
@@ -297,7 +325,18 @@ function getWebviewContent(nodes: GraphNode[], edges: GraphEdge[], settings: any
 				},
 				style: [
 					{
-						selector: 'node',
+						selector: 'node[type = "class"]',
+						style: {
+							'label': 'data(label)',
+							'text-valign': 'center',
+							'text-halign': 'center',
+							'background-color': '#1976d2', // クラスノードは青系
+							'color': '#fff',
+							'cursor': 'pointer'
+						}
+					},
+					{
+						selector: 'node[type = "function"]',
 						style: {
 							'label': 'data(label)',
 							'text-valign': 'center',
