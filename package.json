@@ -3,6 +3,11 @@
   "displayName": "CodeVision",
   "description": "Visualize code structure with butterfly graphs",
   "version": "0.0.1",
+  "publisher": "CodeVision",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fujarenpaw/CodeVision.git"
+  },
   "engines": {
     "vscode": "^1.99.1"
   },
