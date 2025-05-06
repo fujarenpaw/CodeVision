@@ -1,14 +1,14 @@
 # Code Vision - Visual Studio Code Extension
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
 
 ## Overview
 
 Code Vision is a Visual Studio Code extension that visualizes function call relationships in your codebase using a butterfly graph (Call Tree). This visualization helps developers better understand and explore their code by showing both callers and callees of selected functions.
 
-![Demo](path/to/demo.gif)
+![Demo](img/demo.gif)
 
 ## Features
 
@@ -35,7 +35,7 @@ Code Vision is a Visual Studio Code extension that visualizes function call rela
 2. Press `Ctrl+P` to open the Quick Open dialog
 3. Paste the following command and press Enter:
    ```
-   ext install your-extension-id
+   ext install CodeVision
    ```
 4. Click the Install button
 
@@ -67,7 +67,7 @@ The extension can be configured through VS Code settings:
 
 ## Requirements
 
-- Visual Studio Code 1.60.0 or higher
+- Visual Studio Code 1.99.1 or higher
 - Language Server Protocol (LSP) support for your programming language
   - For C/C++: Install "C/C++" extension (ms-vscode.cpptools)
   - For Python: Install "Python" extension (ms-python.python)

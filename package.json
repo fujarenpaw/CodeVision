@@ -4,7 +4,7 @@
   "description": "Visualize code structure with butterfly graphs",
   "version": "0.0.1",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.99.1"
   },
   "categories": [
     "Other"

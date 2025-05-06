@@ -1,14 +1,14 @@
 # Code Vision - Visual Studio Code拡張機能
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/your-extension-id.svg)](https://marketplace.visualstudio.com/items?itemName=your-extension-id)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
 
 ## 概要
 
 Code Visionは、Visual Studio Codeの拡張機能で、コードベース内の関数呼び出し関係をバタフライグラフ(コールツリー)として視覚化します。この視覚化により、選択した関数の呼び出し元と呼び出し先を表示することで、開発者がコードをより理解しやすく、探索しやすくなります。
 
-![デモ](path/to/demo.gif)
+![デモ](img/demo.gif)
 
 ## 機能
 
@@ -35,7 +35,7 @@ Code Visionは、Visual Studio Codeの拡張機能で、コードベース内の
 2. `Ctrl+P`を押してクイックオープンダイアログを開く
 3. 以下のコマンドを貼り付けてEnterを押す：
    ```
-   ext install your-extension-id
+   ext install CodeVision
    ```
 4. インストールボタンをクリック
 
@@ -67,7 +67,7 @@ Code Visionは、Visual Studio Codeの拡張機能で、コードベース内の
 
 ## 必要条件
 
-- Visual Studio Code 1.60.0以上
+- Visual Studio Code 1.99.1以上
 - プログラミング言語のLanguage Server Protocol (LSP)サポート
   - C/C++の場合: "C/C++"拡張機能（ms-vscode.cpptools）をインストール
   - Pythonの場合: "Python"拡張機能（ms-python.python）をインストール
