@@ -1,8 +1,8 @@
 # Code Vision - Visual Studio Code Extension
 
-[![Version](https://img.shields.io/visual-studio-marketplace/v/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/CodeVision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision)
+[![Version](https://img.shields.io/visual-studio-marketplace/v/CodeVision.codevision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision.codevision)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/CodeVision.codevision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision.codevision)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/CodeVision.codevision.svg)](https://marketplace.visualstudio.com/items?itemName=CodeVision.codevision)
 
 ## Overview
 
