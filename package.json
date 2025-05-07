@@ -13,8 +13,17 @@
   },
   "icon": "icon.png",
   "categories": [
-    "Debuggers",
-    "Visualization"
+    "Visualization",
+  ],
+  "keywords": [
+    "visualization",
+    "code-structure",
+    "call-tree",
+    "butterfly-graph",
+    "dependency-graph",
+    "code-analysis",
+    "programming",
+    "developer-tools"
   ],
   "activationEvents": [
     "onCommand:codevision.showButterflyGraph"
